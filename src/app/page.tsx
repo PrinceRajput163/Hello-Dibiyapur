@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import ThreeBackground from "@/components/ui/ThreeBackground";
-import LoginModal from "@/components/auth/LoginModal";
+import SpotlightCard from "@/components/ui/SpotlightCard";
 import { useAuth } from "@/lib/auth-context";
 import {
   Store,
@@ -39,7 +38,7 @@ const MODULE_CARDS = [
     icon: Store,
     badge: "Live Status & Delivery",
     gradient: "from-orange-500 to-amber-500",
-    bgLight: "bg-orange-50/70 border-orange-100",
+    spotlight: "rgba(249, 115, 22, 0.15)",
     textColor: "text-orange-600",
     ctaText: "Explore Directory",
   },
@@ -51,7 +50,7 @@ const MODULE_CARDS = [
     icon: Megaphone,
     badge: "Verified Local Feed",
     gradient: "from-blue-600 to-indigo-600",
-    bgLight: "bg-blue-50/70 border-blue-100",
+    spotlight: "rgba(79, 70, 229, 0.15)",
     textColor: "text-blue-600",
     ctaText: "Open Ask Board",
   },
@@ -63,7 +62,7 @@ const MODULE_CARDS = [
     icon: ShoppingBag,
     badge: "0% Commission",
     gradient: "from-emerald-500 to-teal-600",
-    bgLight: "bg-emerald-50/70 border-emerald-100",
+    spotlight: "rgba(16, 185, 129, 0.15)",
     textColor: "text-emerald-600",
     ctaText: "Browse Marketplace",
   },
@@ -75,7 +74,7 @@ const MODULE_CARDS = [
     icon: Users2,
     badge: "Starting ₹249/Reel",
     gradient: "from-purple-600 to-pink-600",
-    bgLight: "bg-purple-50/70 border-purple-100",
+    spotlight: "rgba(168, 85, 247, 0.15)",
     textColor: "text-purple-600",
     ctaText: "View Creators",
   },
@@ -106,23 +105,70 @@ const itemVariants = {
 };
 
 export default function LandingPage() {
-  const { user } = useAuth();
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const { user, business } = useAuth();
+  const isAuth = !!user;
+  const isOwner = user?.role === "business_owner" || !!business;
+
+  // Hero Section Interactive Mouse Tracking
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const [heroMouse, setHeroMouse] = useState({ x: 0, y: 0 });
+  const [heroHovered, setHeroHovered] = useState(false);
+
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!heroRef.current) return;
+    const rect = heroRef.current.getBoundingClientRect();
+    setHeroMouse({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setHeroHovered(true);
+  };
 
   return (
     <div className="py-6 sm:py-10 space-y-16">
-      {/* ── 1. Hero Section with 3D Canvas Particle Network ── */}
-      <section className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-8 sm:p-12 lg:p-16 shadow-2xl border border-slate-800">
-        {/* 3D Animated Canvas Background */}
-        <ThreeBackground />
+      {/* ── 1. Hero Section with Interactive Glowing Grid Lines & Spotlight ── */}
+      <section
+        ref={heroRef}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={() => setHeroHovered(false)}
+        className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-slate-950 text-white p-8 sm:p-12 lg:p-16 shadow-2xl border border-slate-800/80 group"
+      >
+        {/* Layer A: Base Subtle Linear Grid Pattern */}
+        <div
+          className="absolute inset-0 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:32px_32px] opacity-25 pointer-events-none"
+        />
+
+        {/* Layer B: Interactive Glowing Cyan/Emerald Grid Reveal via Radial Mask */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#06b6d4_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] bg-[size:32px_32px] transition-opacity duration-200"
+          style={{
+            opacity: heroHovered ? 0.8 : 0,
+            maskImage: `radial-gradient(350px circle at ${heroMouse.x}px ${heroMouse.y}px, black 30%, transparent 80%)`,
+            WebkitMaskImage: `radial-gradient(350px circle at ${heroMouse.x}px ${heroMouse.y}px, black 30%, transparent 80%)`,
+          }}
+        />
+
+        {/* Layer C: Interactive Center Cursor Spotlight Glow */}
+        <div
+          className="pointer-events-none absolute -inset-px transition-opacity duration-300 z-0"
+          style={{
+            opacity: heroHovered ? 1 : 0,
+            background: `radial-gradient(550px circle at ${heroMouse.x}px ${heroMouse.y}px, rgba(99, 102, 241, 0.18), rgba(13, 148, 136, 0.09) 45%, transparent 80%)`,
+          }}
+        />
+
+        {/* Ambient Glow Orbs */}
+        <div className="absolute -top-10 -left-10 h-96 w-96 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-10 -right-10 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-orange-500/5 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
-          {/* Badge */}
+          {/* Top Pill Badge */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 text-xs sm:text-sm font-bold text-orange-300 shadow-inner"
+            className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 backdrop-blur-md border border-slate-800 px-4 py-1.5 text-xs sm:text-sm font-bold text-orange-400 shadow-sm hover:border-orange-500/50 hover:bg-slate-900 hover:scale-105 transition-all duration-200 cursor-default"
           >
             <Sparkles className="h-4 w-4 text-orange-400" />
             <span>District Auraiya’s #1 Hyper-Local Platform</span>
@@ -133,7 +179,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15] text-white drop-shadow-sm"
+            className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15] text-white"
           >
             Dibiyapur Ka Apna{" "}
             <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-teal-400 bg-clip-text text-transparent">
@@ -146,12 +192,12 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed font-normal max-w-2xl mx-auto"
+            className="text-base sm:text-lg lg:text-xl text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto"
           >
             NTPC se Phaphund Road tak — Dukanein, Community Help, Second-hand Deals aur Local Creators sab ek jagah.
           </motion.p>
 
-          {/* Dual Call-to-Action Buttons */}
+          {/* Dual Call-to-Action Buttons with Auth-Aware Routing */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -160,8 +206,8 @@ export default function LandingPage() {
           >
             <Link
               id="hero-explore-btn"
-              href="/directory"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-4 text-base font-extrabold text-white shadow-xl hover:shadow-orange-500/25 hover:scale-[1.02] active:scale-95 transition-all"
+              href={isAuth ? "/directory" : "/auth?mode=resident&redirect=/directory"}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-4 text-base font-extrabold text-white shadow-xl hover:shadow-2xl hover:shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all duration-200"
             >
               <Search className="h-5 w-5" />
               Explore Dibiyapur
@@ -170,26 +216,26 @@ export default function LandingPage() {
 
             <Link
               id="hero-register-owner-btn"
-              href="/auth/register?role=business_owner"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/25 backdrop-blur-md px-7 py-4 text-base font-bold text-white shadow-lg active:scale-95 transition-all"
+              href={isOwner ? "/owner/dashboard" : "/auth?mode=owner"}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur-md px-7 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
             >
               <Store className="h-5 w-5 text-orange-400" />
-              List Your Business (Dukaan Register Karein)
+              {isOwner ? "Open Owner Dashboard" : "List Your Business (Dukaan Register Karein)"}
             </Link>
           </motion.div>
 
-          {/* Live Zone Ticker */}
+          {/* Live Zone Ticker Badges with Hover Highlight */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="pt-6 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400 font-medium"
           >
-            <span>Live Coverage:</span>
+            <span className="font-semibold text-slate-400">Live Coverage:</span>
             {LOCAL_ZONES.map((zone) => (
               <span
                 key={zone}
-                className="rounded-full bg-slate-800/80 border border-slate-700/60 px-3 py-1 text-[11px] text-slate-300"
+                className="rounded-full bg-slate-900/60 border border-slate-800 px-3.5 py-1 text-[11px] text-slate-300 backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-emerald-500/50 hover:bg-slate-900/90 hover:text-emerald-300 hover:shadow-lg hover:shadow-emerald-950/40 cursor-default"
               >
                 📍 {zone}
               </span>
@@ -209,7 +255,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="flex items-center gap-3.5 rounded-3xl bg-white p-5 sm:p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+              className="flex items-center gap-3.5 rounded-3xl bg-white p-5 sm:p-6 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               <div className={`rounded-2xl p-3 bg-slate-50 border border-slate-100 ${stat.color}`}>
                 <Icon className="h-6 w-6" />
@@ -227,7 +273,7 @@ export default function LandingPage() {
         })}
       </section>
 
-      {/* ── 3. Features Interactive Grid ── */}
+      {/* ── 3. Features Interactive Grid with Glowing Border Spotlight ── */}
       <section className="space-y-6">
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -247,15 +293,19 @@ export default function LandingPage() {
         >
           {MODULE_CARDS.map((card) => {
             const Icon = card.icon;
+            const targetHref = isAuth ? card.href : `/auth?mode=resident&redirect=${encodeURIComponent(card.href)}`;
+
             return (
-              <motion.div
-                key={card.title}
-                variants={itemVariants}
-                className="group relative flex flex-col justify-between rounded-3xl bg-white p-6 sm:p-8 border border-slate-100 shadow-sm hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300"
-              >
-                <div>
+              <motion.div key={card.title} variants={itemVariants} className="h-full">
+                <SpotlightCard
+                  spotlightColor={card.spotlight}
+                  className="h-full shadow-sm"
+                >
                   <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className={`rounded-2xl p-3.5 bg-gradient-to-br ${card.gradient} text-white shadow-md group-hover:scale-110 transition-transform`}>
+                    {/* Icon with lift and rotation on hover */}
+                    <div
+                      className={`rounded-2xl p-3.5 bg-gradient-to-br ${card.gradient} text-white shadow-md group-hover:-translate-y-1 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-200`}
+                    >
                       <Icon className="h-7 w-7" />
                     </div>
                     <span className="rounded-full bg-slate-100 border border-slate-200/80 px-3 py-1 text-xs font-extrabold text-slate-700">
@@ -263,7 +313,7 @@ export default function LandingPage() {
                     </span>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                         {card.title}
@@ -276,18 +326,18 @@ export default function LandingPage() {
                       {card.description}
                     </p>
                   </div>
-                </div>
 
-                <div className="pt-6 mt-4 border-t border-slate-100 flex items-center justify-between">
-                  <Link
-                    href={card.href}
-                    className={`inline-flex items-center gap-2 text-sm sm:text-base font-extrabold ${card.textColor} group-hover:underline`}
-                  >
-                    {card.ctaText}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                  <span className="text-xs text-slate-400 font-semibold">100% Free</span>
-                </div>
+                  <div className="pt-6 mt-4 border-t border-slate-100 flex items-center justify-between">
+                    <Link
+                      href={targetHref}
+                      className={`inline-flex items-center gap-2 text-sm sm:text-base font-extrabold ${card.textColor} group-hover:underline`}
+                    >
+                      {card.ctaText}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                    <span className="text-xs text-slate-400 font-semibold">100% Free</span>
+                  </div>
+                </SpotlightCard>
               </motion.div>
             );
           })}
@@ -332,8 +382,8 @@ export default function LandingPage() {
               </div>
 
               <Link
-                href="/auth/register?role=user"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white text-slate-900 px-6 py-3.5 text-sm font-extrabold shadow-md hover:bg-slate-100 active:scale-95 transition-all"
+                href="/auth?mode=resident"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white text-slate-900 px-6 py-3.5 text-sm font-extrabold shadow-md hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all duration-200"
               >
                 Register as Resident
                 <ArrowRight className="h-4 w-4" />
@@ -365,8 +415,8 @@ export default function LandingPage() {
               </div>
 
               <Link
-                href="/auth/register?role=business_owner"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3.5 text-sm font-extrabold shadow-lg hover:brightness-110 active:scale-95 transition-all"
+                href="/auth?mode=owner"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3.5 text-sm font-extrabold shadow-lg hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200"
               >
                 Register Dukaan & Get Dashboard
                 <ArrowRight className="h-4 w-4" />
@@ -416,14 +466,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* ── Login Gatekeeper Modal ── */}
-      <LoginModal
-        isOpen={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-        actionTitle="Unlock Full Access"
-        actionSubtitle="Enter your mobile number to explore and interact on Dibiyapur Live."
-      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import type { Business } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import LoginModal from "@/components/auth/LoginModal";
+import AuthGuard from "@/components/auth/AuthGuard";
 import {
   Phone,
   MessageCircle,
@@ -188,7 +189,8 @@ export default function DirectoryPage() {
   };
 
   return (
-    <div className="py-6">
+    <AuthGuard>
+      <div className="py-6">
       {/* ── Top Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -564,6 +566,7 @@ export default function DirectoryPage() {
         actionTitle="Phone Verification Required"
         actionSubtitle="Enter your phone number once to connect directly via Call or WhatsApp with Dibiyapur shop owners."
       />
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import type { Creator } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import LoginModal from "@/components/auth/LoginModal";
+import AuthGuard from "@/components/auth/AuthGuard";
 import {
   Users2,
   MessageCircle,
@@ -102,7 +103,8 @@ export default function CreatorsPage() {
   const totalReach = creators.reduce((s, c) => s + (c.followers ?? 0), 0);
 
   return (
-    <div className="py-6">
+    <AuthGuard>
+      <div className="py-6">
       {/* ── Page Header / Hero ── */}
       <div
         className="relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-8 text-white shadow-xl"
@@ -352,6 +354,7 @@ export default function CreatorsPage() {
         actionTitle="Phone Verification Required"
         actionSubtitle="Enter your mobile number to hire local creators for shop promotion & reels."
       />
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import type { CommunityPost } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import LoginModal from "@/components/auth/LoginModal";
+import AuthGuard from "@/components/auth/AuthGuard";
 import {
   Megaphone,
   Plus,
@@ -208,7 +209,8 @@ export default function AskPage() {
   };
 
   return (
-    <div className="py-6">
+    <AuthGuard>
+      <div className="py-6">
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -631,6 +633,7 @@ export default function AskPage() {
         actionTitle="Phone Verification Required"
         actionSubtitle="Enter your mobile number to post requirements and reply directly to Dibiyapur residents."
       />
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

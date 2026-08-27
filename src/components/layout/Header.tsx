@@ -68,7 +68,7 @@ type GpsStatus = "idle" | "loading" | "success" | "error";
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, business, logout } = useAuth();
+  const { user, business, logout, isAuthenticated } = useAuth();
 
   const [zone, setZone] = useState("NTPC Township");
   const [zoneOpen, setZoneOpen] = useState(false);
@@ -126,114 +126,113 @@ export default function Header() {
     } else {
       setZone(label);
       setZoneOpen(false);
+      setGpsError(null);
     }
   };
 
   const isOwner = user?.role === "business_owner" || !!business;
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-strong border-b border-slate-200/70">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4">
-          {/* ── Brand ── */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md transition-transform duration-300 group-hover:scale-105"
-              style={{ background: "linear-gradient(135deg, #f97316, #0d9488)" }}
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
+          {/* ── Left: Brand Identity ── */}
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 group"
+              id="brand-logo-btn"
             >
-              <Zap className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
-            <div>
-              <h1 className="text-base font-extrabold leading-none tracking-tight text-slate-900">
-                Dibiyapur <span className="gradient-text">Live</span>
-              </h1>
-              <p className="text-[10px] font-medium text-slate-400 leading-none mt-0.5">
-                Apna Digital Shahar
-              </p>
-            </div>
-          </Link>
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-md group-hover:scale-105 transition-transform duration-200">
+                <Zap className="h-5 w-5 fill-white" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
+                    Dibiyapur<span className="text-orange-500">.Live</span>
+                  </span>
+                  <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-600 border border-emerald-500/20">
+                    Auraiya
+                  </span>
+                </div>
+                <span className="text-[10px] font-semibold text-slate-400 leading-tight">
+                  Apna Digital Shahar
+                </span>
+              </div>
+            </Link>
+          </div>
 
-          {/* ── Desktop Navigation Links ── */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label, emoji }) => {
-              const isActive = pathname === href;
+          {/* ── Center: Desktop Navigation Links ── */}
+          <nav className="hidden md:flex items-center gap-1">
+            {NAV_LINKS.map((link) => {
+              const isActive = pathname === link.href;
+              const targetHref =
+                link.href === "/" || isAuthenticated
+                  ? link.href
+                  : `/auth?mode=resident&redirect=${encodeURIComponent(link.href)}`;
+
               return (
                 <Link
-                  key={href}
-                  href={href}
-                  className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${
+                  key={link.href}
+                  id={`nav-link-${link.label.toLowerCase()}`}
+                  href={targetHref}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition-all duration-200 ${
                     isActive
-                      ? "text-orange-600 bg-orange-50/80 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
-                  <span className="text-sm">{emoji}</span>
-                  {label}
-                  {isActive && (
-                    <span
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full"
-                      style={{ background: "linear-gradient(90deg, #f97316, #0d9488)" }}
-                    />
-                  )}
+                  <span>{link.emoji}</span>
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* ── Right Actions ── */}
+          {/* ── Right: Location & User Auth ── */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* GPS Detect & Zone Dropdown */}
-            <div className="flex items-center gap-1.5" ref={dropdownRef}>
-              <button
-                id="gps-detect-btn"
-                onClick={detectGps}
-                disabled={gpsStatus === "loading"}
-                className={`hidden sm:flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all duration-200 active:scale-95 ${
-                  gpsStatus === "success"
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                    : gpsStatus === "error"
-                    ? "border-red-300 bg-red-50 text-red-600"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-orange-300 hover:shadow-sm"
-                }`}
-                title="Detect current location via GPS"
-              >
-                {gpsStatus === "loading" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-500" />
-                ) : gpsStatus === "success" ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-600" />
-                ) : (
-                  <Crosshair className="h-3.5 w-3.5 text-orange-500" />
-                )}
-                <span>
-                  {gpsStatus === "loading"
-                    ? "Locating..."
-                    : gpsStatus === "success"
-                    ? "Located!"
-                    : "GPS"}
-                </span>
-              </button>
-
-              {/* Zone selector */}
-              <div className="relative">
+            {/* GPS Geolocation Chip */}
+            <div className="relative" ref={dropdownRef}>
+              <div className="flex items-center">
                 <button
-                  id="zone-selector-btn"
-                  onClick={() => setZoneOpen((v) => !v)}
-                  className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 sm:px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-orange-300 hover:shadow-sm active:scale-95 transition-all"
+                  id="gps-detect-btn"
+                  onClick={detectGps}
+                  title="Detect GPS Location"
+                  className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-l-full border border-r-0 border-slate-200 bg-slate-50 transition-colors hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 ${
+                    gpsStatus === "loading" ? "animate-pulse text-orange-500" : "text-slate-500"
+                  }`}
                 >
-                  <MapPin className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                  <span className="max-w-[85px] sm:max-w-[100px] truncate">{zone}</span>
-                  <ChevronDown
-                    className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${
-                      zoneOpen ? "rotate-180" : ""
-                    }`}
-                  />
+                  {gpsStatus === "loading" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Crosshair className="h-3.5 w-3.5" />
+                  )}
                 </button>
 
+                <button
+                  id="location-picker-btn"
+                  onClick={() => setZoneOpen((v) => !v)}
+                  className="flex items-center gap-1 rounded-r-full border border-slate-200 bg-white py-1.5 px-2 sm:px-3 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-orange-300 hover:bg-orange-50/30"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                  <span className="max-w-[75px] sm:max-w-[100px] truncate text-slate-800 font-bold">
+                    {zone}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-slate-400" />
+                </button>
+
+                {/* Dropdown Menu */}
                 {zoneOpen && (
-                  <div className="animate-fade-in absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-[60]">
+                  <div className="animate-fade-in absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-[60] py-1">
+                    <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        Select Location
+                      </span>
+                    </div>
+
                     {ZONES.map((z) => {
                       const isGps = z.label === "Auto Detect GPS";
-                      const isActive = z.label === zone;
+                      const isActive = zone === z.label;
                       return (
                         <button
                           key={z.label}
@@ -269,22 +268,22 @@ export default function Header() {
               </div>
             </div>
 
-            {/* ── Auth Control / Owner Dashboard Switcher ── */}
+            {/* ── User Auth & Profile Menu ── */}
             <div className="relative" ref={userMenuRef}>
-              {user || business ? (
+              {isAuthenticated ? (
                 <div className="flex items-center gap-2">
-                  {/* Owner Dashboard CTA Button */}
+                  {/* Owner Dashboard Shortcut */}
                   {isOwner && (
                     <Link
                       href="/owner/dashboard"
-                      className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 text-xs font-extrabold shadow-sm active:scale-95 transition-all"
+                      className="hidden sm:inline-flex items-center gap-1.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 text-xs font-extrabold shadow-sm active:scale-95 transition-all"
                     >
                       <LayoutDashboard className="h-3.5 w-3.5" />
                       Dashboard
                     </Link>
                   )}
 
-                  {/* User Profile Avatar Trigger */}
+                  {/* Profile Trigger */}
                   <button
                     onClick={() => setUserMenuOpen((v) => !v)}
                     className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 sm:px-3 sm:py-1 text-xs font-bold text-slate-700 hover:shadow-sm"
@@ -293,12 +292,24 @@ export default function Header() {
                       {isOwner ? "🏪" : "👤"}
                     </div>
                     <span className="hidden sm:inline max-w-[90px] truncate">
-                      {isOwner ? business?.name || "My Dukaan" : user?.name || "Resident"}
+                      {isOwner ? business?.name || user?.name || "Shop Owner" : user?.name || "Resident"}
                     </span>
                     <ChevronDown className="h-3 w-3 text-slate-400" />
                   </button>
 
-                  {/* User Menu Dropdown */}
+                  {/* Direct Logout Button */}
+                  <button
+                    onClick={() => {
+                      logout();
+                      router.push("/");
+                    }}
+                    title="Log Out"
+                    className="hidden sm:flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 transition-colors"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </button>
+
+                  {/* User Dropdown */}
                   {userMenuOpen && (
                     <div className="animate-fade-in absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-[60] p-1.5 space-y-1">
                       <div className="p-3 bg-slate-50 rounded-xl">
@@ -321,7 +332,7 @@ export default function Header() {
                         </Link>
                       ) : (
                         <Link
-                          href="/auth/register?role=business_owner"
+                          href="/auth?mode=owner"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl"
                         >
@@ -345,21 +356,13 @@ export default function Header() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Link
-                    href="/auth/login"
-                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 sm:px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-slate-300"
+                    href="/auth"
+                    className="flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white px-3.5 py-2 text-xs sm:text-sm font-extrabold shadow-sm active:scale-95 transition-all"
                   >
                     <LogIn className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Login</span>
-                  </Link>
-
-                  <Link
-                    href="/auth/register"
-                    className="flex items-center gap-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-2.5 sm:px-3 py-1.5 text-xs font-bold shadow-sm active:scale-95 transition-all"
-                  >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    <span>Register</span>
+                    <span>Login / Signup</span>
                   </Link>
                 </div>
               )}

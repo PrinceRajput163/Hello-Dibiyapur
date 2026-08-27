@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { Zap, Store, Megaphone, ShoppingBag, Users2 } from "lucide-react";
 
 const TABS = [
@@ -14,16 +15,22 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-strong border-t border-slate-200/70 pb-safe">
       <div className="mx-auto flex max-w-lg items-stretch">
         {TABS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href;
+          const targetHref =
+            href === "/" || isAuthenticated
+              ? href
+              : `/auth?mode=resident&redirect=${encodeURIComponent(href)}`;
+
           return (
             <Link
               key={href}
-              href={href}
+              href={targetHref}
               className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-bold transition-all duration-200 ${
                 isActive ? "text-orange-600" : "text-slate-400 hover:text-slate-600"
               }`}

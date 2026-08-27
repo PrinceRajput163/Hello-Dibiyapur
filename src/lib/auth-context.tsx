@@ -8,6 +8,7 @@ interface AuthContextType {
   user: UserProfile | null;
   business: Business | null;
   loading: boolean;
+  isAuthenticated: boolean;
   login: (phone: string, name?: string) => Promise<boolean>;
   registerUser: (data: { name: string; phone: string; area_zone: string }) => Promise<UserProfile>;
   registerBusinessOwner: (data: {
@@ -19,8 +20,8 @@ interface AuthContextType {
     whatsapp: string;
     area_zone: string;
     has_delivery: boolean;
-    opening_time: string;
-    closing_time: string;
+    opening_time?: string;
+    closing_time?: string;
     description?: string;
   }) => Promise<{ user: UserProfile; business: Business }>;
   updateBusiness: (updates: Partial<Business>) => Promise<Business | null>;
@@ -32,6 +33,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = "dibiyapur_live_user";
 const LOCAL_STORAGE_BIZ_KEY = "dibiyapur_live_business";
+const PHONE_KEY = "dibiyapur_user_phone";
+const ROLE_KEY = "dibiyapur_user_role";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -43,9 +46,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const storedUser = localStorage.getItem(LOCAL_STORAGE_KEY);
       const storedBiz = localStorage.getItem(LOCAL_STORAGE_BIZ_KEY);
+      const storedPhone = localStorage.getItem(PHONE_KEY);
+      const storedRole = (localStorage.getItem(ROLE_KEY) as UserRole) || "user";
+
       if (storedUser) {
         setUser(JSON.parse(storedUser));
+      } else if (storedPhone) {
+        // Construct fallback user from phone
+        setUser({
+          id: "u_" + Date.now(),
+          name: storedRole === "business_owner" ? "Shop Owner" : "Resident User",
+          phone: storedPhone,
+          role: storedRole,
+          area_zone: "NTPC Township",
+          created_at: new Date().toISOString(),
+        });
       }
+
       if (storedBiz) {
         setBusiness(JSON.parse(storedBiz));
       }
@@ -61,8 +78,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setBusiness(b);
     if (u) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(u));
+      localStorage.setItem(PHONE_KEY, u.phone);
+      localStorage.setItem(ROLE_KEY, u.role);
     } else {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
+      localStorage.removeItem(PHONE_KEY);
+      localStorage.removeItem(ROLE_KEY);
     }
     if (b) {
       localStorage.setItem(LOCAL_STORAGE_BIZ_KEY, JSON.stringify(b));
@@ -72,10 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const registerUser = async (data: { name: string; phone: string; area_zone: string }): Promise<UserProfile> => {
+    const cleanPhone = data.phone.trim().replace(/\D/g, "");
     const newUser: UserProfile = {
       id: "u_" + Date.now(),
-      name: data.name,
-      phone: data.phone,
+      name: data.name.trim(),
+      phone: cleanPhone,
       role: "user",
       area_zone: data.area_zone,
       created_at: new Date().toISOString(),
@@ -94,32 +116,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     whatsapp: string;
     area_zone: string;
     has_delivery: boolean;
-    opening_time: string;
-    closing_time: string;
+    opening_time?: string;
+    closing_time?: string;
     description?: string;
   }): Promise<{ user: UserProfile; business: Business }> => {
     const bizId = "b_" + Date.now();
+    const cleanPhone = data.phone.trim().replace(/\D/g, "");
+    const cleanWhatsapp = data.whatsapp.trim().replace(/\D/g, "") || cleanPhone;
+
     const newBiz: Business = {
       id: bizId,
-      name: data.business_name,
-      owner_name: data.owner_name,
+      name: data.business_name.trim(),
+      owner_name: data.owner_name.trim(),
       category: data.category,
-      address: data.address,
+      address: data.address.trim(),
       area_zone: data.area_zone,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
+      phone: cleanPhone,
+      whatsapp: cleanWhatsapp,
       is_open: true,
       has_delivery: data.has_delivery,
-      opening_time: data.opening_time,
-      closing_time: data.closing_time,
-      description: data.description ?? "",
+      opening_time: data.opening_time || "09:00 AM",
+      closing_time: data.closing_time || "09:00 PM",
+      description: data.description?.trim() || "",
       call_leads: 0,
       whatsapp_leads: 0,
       view_leads: 1,
       created_at: new Date().toISOString(),
     };
 
-    // Try inserting into Supabase businesses table
     try {
       await supabase.from("businesses").insert([{
         name: newBiz.name,
@@ -130,17 +154,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         has_delivery: newBiz.has_delivery,
       }]);
     } catch {
-      // fallback in local state
+      // optimistic
     }
 
     const newUser: UserProfile = {
       id: "u_" + Date.now(),
-      name: data.owner_name,
-      phone: data.phone,
+      name: data.owner_name.trim(),
+      phone: cleanPhone,
       role: "business_owner",
       area_zone: data.area_zone,
       business_id: bizId,
-      business_name: data.business_name,
+      business_name: data.business_name.trim(),
       created_at: new Date().toISOString(),
     };
 
@@ -149,20 +173,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (phone: string, name?: string): Promise<boolean> => {
-    // Check if there is a saved business matching phone or create default
-    const existing = user;
-    if (existing && existing.phone === phone) {
-      return true;
-    }
+    const cleanPhone = phone.trim().replace(/\D/g, "");
+    const isLikelyOwner = cleanPhone.endsWith("0");
 
-    // Demo default login
-    const isLikelyOwner = phone.endsWith("0");
     const demoUser: UserProfile = {
       id: "u_" + Date.now(),
       name: name || (isLikelyOwner ? "Sharma Ji (Owner)" : "Ramesh Kumar"),
-      phone,
+      phone: cleanPhone,
       role: isLikelyOwner ? "business_owner" : "user",
-      area_zone: "NTPC Colony",
+      area_zone: "NTPC Township",
       business_name: isLikelyOwner ? "Sharma Electronics & Hardware" : undefined,
       business_id: isLikelyOwner ? "b_demo" : undefined,
       created_at: new Date().toISOString(),
@@ -175,9 +194,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           owner_name: demoUser.name,
           category: "Electrician",
           address: "Shop #14, Main Market, NTPC Gate Road, Dibiyapur",
-          area_zone: "NTPC Colony",
-          phone,
-          whatsapp: phone,
+          area_zone: "NTPC Township",
+          phone: cleanPhone,
+          whatsapp: cleanPhone,
           is_open: true,
           has_delivery: true,
           opening_time: "09:00 AM",
@@ -200,7 +219,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setBusiness(updated);
     localStorage.setItem(LOCAL_STORAGE_BIZ_KEY, JSON.stringify(updated));
 
-    // Try updating Supabase
     try {
       await supabase
         .from("businesses")
@@ -241,6 +259,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         business,
         loading,
+        isAuthenticated: !!user,
         login,
         registerUser,
         registerBusinessOwner,

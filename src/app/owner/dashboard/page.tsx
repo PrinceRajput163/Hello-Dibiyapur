@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
+import AuthGuard from "@/components/auth/AuthGuard";
 import {
   Store,
   PhoneCall,
@@ -117,7 +118,8 @@ export default function OwnerDashboardPage() {
   const viewCount = business?.view_leads ?? 520;
 
   return (
-    <div className="py-6 sm:py-8 space-y-8 max-w-5xl mx-auto">
+    <AuthGuard>
+      <div className="py-6 sm:py-8 space-y-8 max-w-5xl mx-auto">
       {/* ── Dashboard Top Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-slate-800">
         <div className="space-y-1.5">
@@ -449,5 +451,6 @@ export default function OwnerDashboardPage() {
         </form>
       </div>
     </div>
+    </AuthGuard>
   );
 }
