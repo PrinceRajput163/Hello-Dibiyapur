@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Sparkles,
   Lock,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -43,7 +44,7 @@ const CATEGORIES = [
   "Other Business / Service",
 ];
 
-export default function AuthGatePage() {
+function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { registerUser, registerBusinessOwner, login, user } = useAuth();
@@ -488,5 +489,20 @@ export default function AuthGatePage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function AuthGatePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <p className="text-xs font-bold text-slate-500">Loading authentication gate...</p>
+        </div>
+      }
+    >
+      <AuthContent />
+    </Suspense>
   );
 }

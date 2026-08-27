@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -42,7 +43,7 @@ const CATEGORIES = [
   "Other Business / Service",
 ];
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { registerUser, registerBusinessOwner, user } = useAuth();
@@ -472,5 +473,20 @@ export default function RegisterPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <p className="text-xs font-bold text-slate-500">Loading registration...</p>
+        </div>
+      }
+    >
+      <RegisterContent />
+    </Suspense>
   );
 }
