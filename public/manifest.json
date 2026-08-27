@@ -1,0 +1,27 @@
+{
+  "name": "Dibiyapur Live",
+  "short_name": "Dibiyapur",
+  "description": "Apna Digital Shahar — Business directory, community feed, marketplace & creators for Dibiyapur, District Auraiya.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f5f9",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "social", "business"],
+  "lang": "hi",
+  "dir": "ltr"
+}
